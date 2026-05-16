@@ -21,6 +21,7 @@
   @keyframes radar  { 0%{opacity:.9;transform:scale(.2)} 100%{opacity:0;transform:scale(1)} }
   @keyframes notifDrop { 0%{opacity:0;transform:translateY(-30px)} 100%{opacity:1;transform:translateY(0)} }
   @keyframes phoneFade { 0%{opacity:0;transform:scale(.985)} 100%{opacity:1;transform:scale(1)} }
+  @keyframes sheetUp { 0%{transform:translateY(100%)} 100%{transform:translateY(0)} }
   ::-webkit-scrollbar { width:0; height:0; }
 </style>
 </head>
@@ -295,6 +296,7 @@ function Ic({ name, size=18, color='currentColor', strokeWidth=2 }) {
     image:<><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></>,
     money:<><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></>,
     info:<><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></>,
+    receipt:<><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 3 2V2z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></>,
   };
   return <svg {...p}>{paths[name]||null}</svg>;
 }
@@ -324,6 +326,28 @@ function ListRow({ icon, title, sub, right, chev, onClick, isLast, accent }) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// BottomSheet — reusable slide-up modal
+// ─────────────────────────────────────────────────────────────
+
+function BottomSheet({ open, onClose, children, title }) {
+  if (!open) return null;
+  return (
+    <div style={{position:'absolute',inset:0,zIndex:100,display:'flex',flexDirection:'column',justifyContent:'flex-end'}}>
+      <div onClick={onClose} style={{position:'absolute',inset:0,background:'rgba(0,0,0,.45)'}}/>
+      <div style={{position:'relative',background:UH.surface,borderRadius:'24px 24px 0 0',
+        padding:'0 0 32px',maxHeight:'85%',display:'flex',flexDirection:'column',
+        animation:'sheetUp .3s cubic-bezier(.18,.89,.32,1.1)'}}>
+        <div style={{display:'flex',justifyContent:'center',padding:'12px 0 4px'}}>
+          <div style={{width:36,height:4,borderRadius:2,background:'rgba(0,0,0,.12)'}}/>
+        </div>
+        {title && <div style={{fontSize:16,fontWeight:700,color:UH.ink,padding:'8px 20px 12px',borderBottom:'0.5px solid rgba(0,0,0,.06)'}}>{title}</div>}
+        <div style={{overflow:'auto',flex:1}}>{children}</div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
 // client.jsx — all screens
 // ─────────────────────────────────────────────────────────────
 
@@ -338,13 +362,15 @@ function BottomBar({ children }) {
 }
 
 function ClientHome({ nav }) {
+  const [showHow, setShowHow] = useState(false);
+  const [selectedCat, setSelectedCat] = useState('Plomería');
   const cats=[
-    {name:'Plomería',icon:'wrench',selected:true},{name:'Eléctrico',icon:'zap'},
+    {name:'Plomería',icon:'wrench'},{name:'Eléctrico',icon:'zap'},
     {name:'Gas',icon:'flame'},{name:'Cerrajería',icon:'key'},
     {name:'A/C',icon:'ac'},{name:'Pintura',icon:'paint'},
   ];
   return (
-    <Screen>
+    <Screen style={{position:'relative'}}>
       <AppHeader big title="Hola, María" sub="Cra. 13 #82-45, Chapinero"
         left={<BrandMark size={28}/>} right={<Avatar name="MR" size={32}/>}/>
       <ScrollArea>
@@ -358,26 +384,31 @@ function ClientHome({ nav }) {
               Apruebas el precio<br/>antes de que empiece.
             </div>
             <div style={{marginTop:14,display:'flex',gap:8}}>
-              <Btn kind="glass" size="sm" style={{color:UH.ink}}>Cómo funciona</Btn>
+              <Btn kind="glass" size="sm" style={{color:UH.ink}} onClick={()=>setShowHow(true)}>Cómo funciona</Btn>
             </div>
           </div>
         </div>
         <div style={{padding:'20px 16px 4px',fontSize:13,fontWeight:600,color:UH.muted,letterSpacing:'0.02em'}}>¿Qué necesitas reparar?</div>
         <div style={{padding:'8px 16px',display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>
-          {cats.map(c=>(
-            <div key={c.name} style={{background:c.selected?UH.ink:UH.surface,color:c.selected?'#fff':UH.ink,
-              borderRadius:14,padding:14,display:'flex',flexDirection:'column',gap:10,minHeight:84,
-              boxShadow:'0 1px 2px rgba(0,0,0,.04)',border:c.selected?'none':'0.5px solid rgba(0,0,0,.04)'}}>
-              <div style={{width:30,height:30,borderRadius:8,background:c.selected?'rgba(255,255,255,.15)':'rgba(0,0,0,.05)',display:'grid',placeItems:'center'}}>
-                <Ic name={c.icon} size={16} color={c.selected?'#fff':UH.ink} strokeWidth={2}/>
+          {cats.map(c=>{
+            const sel=selectedCat===c.name;
+            return (
+              <div key={c.name} onClick={()=>setSelectedCat(c.name)} style={{background:sel?UH.ink:UH.surface,color:sel?'#fff':UH.ink,
+                borderRadius:14,padding:14,display:'flex',flexDirection:'column',gap:10,minHeight:84,cursor:'pointer',
+                boxShadow:'0 1px 2px rgba(0,0,0,.04)',border:sel?'none':'0.5px solid rgba(0,0,0,.04)',
+                transition:'all .15s ease'}}>
+                <div style={{width:30,height:30,borderRadius:8,background:sel?'rgba(255,255,255,.15)':'rgba(0,0,0,.05)',display:'grid',placeItems:'center'}}>
+                  <Ic name={c.icon} size={16} color={sel?'#fff':UH.ink} strokeWidth={2}/>
+                </div>
+                <div style={{fontSize:13,fontWeight:600,letterSpacing:'-0.01em'}}>{c.name}</div>
               </div>
-              <div style={{fontSize:13,fontWeight:600,letterSpacing:'-0.01em'}}>{c.name}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         <ListGroup header="Reciente" style={{marginTop:20}}>
           <ListRow icon={<Ic name="shieldCheck" size={16} color={UH.accent}/>}
-            title="Calentador — reparado" sub="Hace 2 meses · Garantía activa" right="$ 145k" chev isLast/>
+            title="Calentador — reparado" sub="Hace 2 meses · Garantía activa" right="$ 145k" chev isLast
+            onClick={()=>nav&&nav('past')}/>
         </ListGroup>
         <div style={{height:100}}/>
       </ScrollArea>
@@ -386,24 +417,65 @@ function ClientHome({ nav }) {
           Pedir servicio
         </Btn>
       </BottomBar>
+
+      {/* Cómo funciona sheet */}
+      <BottomSheet open={showHow} onClose={()=>setShowHow(false)} title="Cómo funciona">
+        <div style={{padding:'16px 20px'}}>
+          {[
+            {n:1,icon:'pin',title:'Describes el problema',sub:'Foto + texto. El técnico llega en menos de 30 min.'},
+            {n:2,icon:'shieldCheck',title:'Recibes el Acuerdo',sub:'El técnico te envía qué encontró, qué hará y el rango de precio — antes de tocar nada.'},
+            {n:3,icon:'lock',title:'Apruebas y el precio queda bloqueado',sub:'Solo pagas si apruebas. El precio no sube ni un peso. Garantía de 30 días activada al aprobar.'},
+          ].map((s,i)=>(
+            <div key={s.n} style={{display:'flex',gap:14,marginBottom:i<2?24:0}}>
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:0}}>
+                <div style={{width:36,height:36,borderRadius:'50%',background:UH.accent,color:'#fff',
+                  display:'grid',placeItems:'center',flexShrink:0,fontSize:14,fontWeight:700}}>
+                  {s.n}
+                </div>
+                {i<2&&<div style={{width:2,height:24,background:'#E0F0E8',marginTop:4}}/>}
+              </div>
+              <div style={{paddingTop:6}}>
+                <div style={{fontSize:14.5,fontWeight:700,color:UH.ink,marginBottom:4}}>{s.title}</div>
+                <div style={{fontSize:13,color:UH.muted,lineHeight:1.5}}>{s.sub}</div>
+              </div>
+            </div>
+          ))}
+          <div style={{marginTop:24,padding:14,background:UH.accentSoft,borderRadius:14,display:'flex',gap:10,alignItems:'center'}}>
+            <Ic name="info" size={16} color={UH.accentInk}/>
+            <div style={{fontSize:12.5,color:UH.accentInk,lineHeight:1.4}}>Si rechazas el Acuerdo, solo pagas <strong>$ 20.000</strong> por la visita diagnóstica.</div>
+          </div>
+          <div style={{marginTop:16}}>
+            <Btn kind="accent" full size="lg" onClick={()=>{setShowHow(false);nav&&nav('request');}}>
+              Empezar ahora
+            </Btn>
+          </div>
+        </div>
+      </BottomSheet>
     </Screen>
   );
 }
 
 function ClientRequest({ nav }) {
+  const [showCats, setShowCats] = useState(false);
+  const [cat, setCat] = useState({name:'Plomería',icon:'wrench'});
+  const allCats=[
+    {name:'Plomería',icon:'wrench'},{name:'Eléctrico',icon:'zap'},
+    {name:'Gas',icon:'flame'},{name:'Cerrajería',icon:'key'},
+    {name:'A/C',icon:'ac'},{name:'Pintura',icon:'paint'},
+  ];
   return (
-    <Screen>
+    <Screen style={{position:'relative'}}>
       <AppHeader title="Nueva solicitud"
         left={<span onClick={()=>nav&&nav('home')} style={{cursor:'pointer'}}><Ic name="back" size={20}/></span>}/>
       <ScrollArea>
         <div style={{padding:'12px 16px 0'}}>
-          <Card style={{padding:14,display:'flex',alignItems:'center',gap:12}}>
+          <Card onClick={()=>setShowCats(true)} style={{padding:14,display:'flex',alignItems:'center',gap:12,cursor:'pointer'}}>
             <div style={{width:38,height:38,borderRadius:10,background:UH.ink,color:'#fff',display:'grid',placeItems:'center'}}>
-              <Ic name="wrench" size={18} color="#fff"/>
+              <Ic name={cat.icon} size={18} color="#fff"/>
             </div>
             <div style={{flex:1}}>
-              <div style={{fontSize:15,fontWeight:600}}>Plomería</div>
-              <div style={{fontSize:12.5,color:UH.muted}}>Cambiar categoría</div>
+              <div style={{fontSize:15,fontWeight:600}}>{cat.name}</div>
+              <div style={{fontSize:12.5,color:UH.accent,fontWeight:500}}>Cambiar categoría</div>
             </div>
             <Ic name="chevR" size={14} color={UH.muted}/>
           </Card>
@@ -463,6 +535,25 @@ function ClientRequest({ nav }) {
           Buscar técnico cerca
         </Btn>
       </BottomBar>
+
+      {/* Cambiar categoría sheet */}
+      <BottomSheet open={showCats} onClose={()=>setShowCats(false)} title="Categoría">
+        <div style={{padding:'8px 16px 8px'}}>
+          {allCats.map((c,i)=>(
+            <div key={c.name} onClick={()=>{setCat(c);setShowCats(false);}}
+              style={{display:'flex',alignItems:'center',gap:14,padding:'14px 4px',
+                borderBottom:i<allCats.length-1?'0.5px solid rgba(0,0,0,.06)':'none',cursor:'pointer'}}>
+              <div style={{width:40,height:40,borderRadius:11,
+                background:cat.name===c.name?UH.accent:'rgba(0,0,0,.05)',
+                display:'grid',placeItems:'center',flexShrink:0}}>
+                <Ic name={c.icon} size={18} color={cat.name===c.name?'#fff':UH.ink}/>
+              </div>
+              <div style={{flex:1,fontSize:15,fontWeight:500,color:UH.ink}}>{c.name}</div>
+              {cat.name===c.name&&<Ic name="check" size={18} color={UH.accent}/>}
+            </div>
+          ))}
+        </div>
+      </BottomSheet>
     </Screen>
   );
 }
@@ -504,16 +595,17 @@ function Radar() {
   );
 }
 
-function ClientEnRoute({ progress=0.35, eta=14 }) {
+function ClientEnRoute({ progress=0.35, eta=14, nav }) {
+  const [showSoporte, setShowSoporte] = useState(false);
   return (
-    <Screen>
+    <Screen style={{position:'relative'}}>
       <div style={{position:'absolute',top:0,left:0,right:0,height:'60%',zIndex:0}}>
         <MapView height="100%" progress={progress}/>
       </div>
       <div style={{position:'relative',zIndex:5,padding:'52px 16px 0'}}>
         <Row justify="space-between">
-          <Btn kind="glass" size="sm" icon={<Ic name="back" size={14}/>}>Volver</Btn>
-          <Btn kind="glass" size="sm" icon={<Ic name="shield" size={14} color={UH.accent}/>}>Soporte</Btn>
+          <Btn kind="glass" size="sm" icon={<Ic name="back" size={14}/>} onClick={()=>nav&&nav('request')}>Volver</Btn>
+          <Btn kind="glass" size="sm" icon={<Ic name="shield" size={14} color={UH.accent}/>} onClick={()=>setShowSoporte(true)}>Soporte</Btn>
         </Row>
       </div>
       <div style={{flex:1}}></div>
@@ -543,19 +635,21 @@ function ClientEnRoute({ progress=0.35, eta=14 }) {
           </div>
         </div>
       </div>
+      <SoporteSheet open={showSoporte} onClose={()=>setShowSoporte(false)}/>
     </Screen>
   );
 }
 
 function ClientWaitingDiag({ stage='arrived' }) {
+  const [showSoporte, setShowSoporte] = useState(false);
   const stages={
     arrived:{dot:1},diagnosing:{dot:2},drafting:{dot:3},
   };
   const s=stages[stage]||stages.arrived;
   return (
-    <Screen>
+    <Screen style={{position:'relative'}}>
       <AppHeader title="En sitio" left={<Ic name="back" size={20}/>}
-        right={<Btn kind="ghost" size="sm" icon={<Ic name="shield" size={14} color={UH.accent}/>}>Soporte</Btn>}/>
+        right={<Btn kind="ghost" size="sm" icon={<Ic name="shield" size={14} color={UH.accent}/>} onClick={()=>setShowSoporte(true)}>Soporte</Btn>}/>
       <ScrollArea>
         <div style={{padding:'8px 16px 0'}}>
           <Card style={{padding:16}}>
@@ -612,6 +706,7 @@ function ClientWaitingDiag({ stage='arrived' }) {
           </div>
         </div>
       </ScrollArea>
+      <SoporteSheet open={showSoporte} onClose={()=>setShowSoporte(false)}/>
     </Screen>
   );
 }
@@ -837,8 +932,9 @@ function ClientWorking({ doneSteps=2 }) {
 
 function ClientClosed({ nav, rated=0 }) {
   const [stars,setStars]=useState(rated);
+  const [showFactura,setShowFactura]=useState(false);
   return (
-    <Screen>
+    <Screen style={{position:'relative'}}>
       <AppHeader title="" left={<Ic name="close" size={20}/>}/>
       <ScrollArea>
         <div style={{padding:'8px 16px 0',textAlign:'center'}}>
@@ -860,7 +956,7 @@ function ClientClosed({ nav, rated=0 }) {
             </Row>
             <div style={{marginTop:14,paddingTop:14,borderTop:'0.5px solid rgba(0,0,0,.06)',display:'flex',justifyContent:'space-between',fontSize:13,color:UH.muted}}>
               <span>•••• Visa 4421</span>
-              <span style={{color:UH.ink,fontWeight:600}}>Ver factura</span>
+              <span onClick={()=>setShowFactura(true)} style={{color:UH.accent,fontWeight:600,cursor:'pointer'}}>Ver factura</span>
             </div>
           </Card>
         </div>
@@ -895,6 +991,177 @@ function ClientClosed({ nav, rated=0 }) {
       <BottomBar>
         <Btn kind="primary" full size="lg" onClick={()=>nav&&nav('home')}>Listo</Btn>
       </BottomBar>
+      <FacturaSheet open={showFactura} onClose={()=>setShowFactura(false)}/>
+    </Screen>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Shared sheets
+// ─────────────────────────────────────────────────────────────
+
+function SoporteSheet({ open, onClose }) {
+  return (
+    <BottomSheet open={open} onClose={onClose} title="Soporte">
+      <div style={{padding:'8px 20px 8px'}}>
+        {[
+          {icon:'phone',   label:'Llamar a soporte',    sub:'Lun–Vie 7am–9pm · Sáb 8am–6pm'},
+          {icon:'chat',    label:'Chat en tiempo real',  sub:'Respuesta en menos de 2 min'},
+          {icon:'shield',  label:'Reportar problema',    sub:'Con el técnico o el servicio'},
+        ].map((item,i,arr)=>(
+          <div key={item.label} style={{display:'flex',alignItems:'center',gap:14,padding:'16px 0',
+            borderBottom:i<arr.length-1?'0.5px solid rgba(0,0,0,.06)':'none',cursor:'pointer'}}>
+            <div style={{width:42,height:42,borderRadius:12,background:UH.accentSoft,
+              display:'grid',placeItems:'center',flexShrink:0}}>
+              <Ic name={item.icon} size={20} color={UH.accent}/>
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:15,fontWeight:600,color:UH.ink}}>{item.label}</div>
+              <div style={{fontSize:12.5,color:UH.muted,marginTop:2}}>{item.sub}</div>
+            </div>
+            <Ic name="chevR" size={14} color={UH.muted}/>
+          </div>
+        ))}
+        <div style={{marginTop:8,padding:12,background:'rgba(0,0,0,.03)',borderRadius:12,fontSize:12.5,color:UH.muted,lineHeight:1.5,textAlign:'center'}}>
+          ID del servicio: <strong style={{color:UH.ink}}>UH-F-3014</strong> · Carlos Mendoza
+        </div>
+      </div>
+    </BottomSheet>
+  );
+}
+
+function FacturaSheet({ open, onClose }) {
+  return (
+    <BottomSheet open={open} onClose={onClose} title="Factura electrónica">
+      <div style={{padding:'12px 20px'}}>
+        <div style={{background:UH.accentSoft,borderRadius:14,padding:16,marginBottom:16,textAlign:'center'}}>
+          <div style={{fontSize:11,color:UH.accentInk,textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600}}>Total pagado</div>
+          <div style={{fontSize:32,fontWeight:700,fontFamily:'"JetBrains Mono",monospace',color:UH.ink,marginTop:4}}>$ 165.000</div>
+          <div style={{fontSize:12,color:UH.accentInk,marginTop:4}}>Dentro del rango aprobado · EN RANGO</div>
+        </div>
+        {[
+          ['Servicio','Plomería · Flash'],
+          ['Técnico','Carlos Mendoza'],
+          ['Fecha','16 de mayo, 2026'],
+          ['Duración','21 min'],
+          ['Acuerdo','#UH-F-3014'],
+          ['Método de pago','Visa •••• 4421'],
+          ['Subtotal','$ 138.655'],
+          ['IVA (19%)','$ 26.345'],
+          ['Total','$ 165.000'],
+        ].map(([label,val],i)=>(
+          <div key={label} style={{display:'flex',justifyContent:'space-between',padding:'10px 0',
+            borderBottom:'0.5px solid rgba(0,0,0,.05)',fontSize:i>=6?13.5:13,
+            fontWeight:i===8?700:400,color:i===8?UH.ink:UH.ink2}}>
+            <span style={{color:i>=6?UH.ink:UH.muted}}>{label}</span>
+            <span>{val}</span>
+          </div>
+        ))}
+        <div style={{marginTop:16}}>
+          <Btn kind="outline" full size="md" icon={<Ic name="receipt" size={16}/>} onClick={onClose}>
+            Descargar PDF
+          </Btn>
+        </div>
+      </div>
+    </BottomSheet>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Past service detail screen
+// ─────────────────────────────────────────────────────────────
+
+function ClientPast({ nav }) {
+  const [showFactura, setShowFactura] = useState(false);
+  return (
+    <Screen style={{position:'relative'}}>
+      <AppHeader title="Servicio anterior"
+        left={<span onClick={()=>nav&&nav('home')} style={{cursor:'pointer'}}><Ic name="back" size={20}/></span>}/>
+      <ScrollArea>
+        {/* Status banner */}
+        <div style={{padding:'6px 16px 0'}}>
+          <div style={{background:UH.accentSoft,border:'1px solid #A8D9C4',borderRadius:16,padding:16,display:'flex',alignItems:'center',gap:12}}>
+            <div style={{width:44,height:44,borderRadius:12,background:UH.accent,display:'grid',placeItems:'center',flexShrink:0}}>
+              <Ic name="shieldCheck" size={22} color="#fff"/>
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:14,fontWeight:700,color:UH.accentInk}}>Garantía activa</div>
+              <div style={{fontSize:12.5,color:UH.accentInk,opacity:0.8,marginTop:2}}>Vence el 16 de marzo, 2026 · 0 días restantes</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Service summary */}
+        <div style={{padding:'14px 16px 0'}}>
+          <Card style={{padding:16}}>
+            <div style={{fontSize:11,color:UH.muted,textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600,marginBottom:10}}>Resumen del servicio</div>
+            <Row gap={12} style={{marginBottom:14}}>
+              <Avatar name="CM" size={44} accent/>
+              <div style={{flex:1}}>
+                <div style={{fontSize:15,fontWeight:600}}>Carlos Mendoza</div>
+                <div style={{fontSize:12.5,color:UH.muted,display:'flex',alignItems:'center',gap:4,marginTop:2}}>
+                  <Ic name="star" size={12} color={UH.warn}/> 5.0 · Plomería
+                </div>
+              </div>
+            </Row>
+            {[
+              ['Problema','Calentador sin agua caliente'],
+              ['Diagnóstico','Resistencia quemada + acumulación de sarro'],
+              ['Solución','Cambio de resistencia y flush del sistema'],
+              ['Fecha','16 de enero, 2026 · 45 min'],
+            ].map(([l,v])=>(
+              <div key={l} style={{paddingTop:10,marginTop:10,borderTop:'0.5px solid rgba(0,0,0,.05)'}}>
+                <div style={{fontSize:11,color:UH.muted,textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600,marginBottom:3}}>{l}</div>
+                <div style={{fontSize:13.5,color:UH.ink2}}>{v}</div>
+              </div>
+            ))}
+          </Card>
+        </div>
+
+        {/* Acuerdo summary */}
+        <div style={{padding:'14px 16px 0'}}>
+          <Card style={{padding:'4px 16px'}}>
+            <SealField label="Acuerdo aprobado" value={
+              <Row justify="space-between" align="center">
+                <span style={{fontFamily:'"JetBrains Mono",monospace',fontSize:16,fontWeight:700}}>$ 120.000 – 160.000</span>
+                <Pill tone="accent" icon={<Ic name="check" size={11} color={UH.accentInk}/>}>EN RANGO</Pill>
+              </Row>
+            }/>
+            <SealField last label="Total pagado" value={
+              <div style={{fontFamily:'"JetBrains Mono",monospace',fontSize:22,fontWeight:700,color:UH.ink}}>
+                $ 145.000 <span style={{fontSize:13,color:UH.muted,fontWeight:400}}>COP</span>
+              </div>
+            }/>
+          </Card>
+        </div>
+
+        {/* Rating given */}
+        <div style={{padding:'14px 16px 0'}}>
+          <Card style={{padding:16,textAlign:'center'}}>
+            <div style={{fontSize:13,color:UH.muted,fontWeight:600,marginBottom:10}}>Tu calificación</div>
+            <Row gap={4} justify="center">
+              {[1,2,3,4,5].map(i=>(
+                <Ic key={i} name="star" size={26} color={UH.warn} strokeWidth={1.5}/>
+              ))}
+            </Row>
+            <div style={{fontSize:13,color:UH.muted,marginTop:8}}>"Muy puntual y explicó todo con claridad."</div>
+          </Card>
+        </div>
+
+        <div style={{height:100}}/>
+      </ScrollArea>
+
+      <BottomBar>
+        <Row gap={10}>
+          <Btn kind="outline" size="lg" style={{flex:1}} onClick={()=>setShowFactura(true)} icon={<Ic name="receipt" size={16}/>}>
+            Factura
+          </Btn>
+          <Btn kind="accent" size="lg" style={{flex:2}} onClick={()=>nav&&nav('request')} iconRight={<Ic name="arrow" size={16} color="#fff"/>}>
+            Pedir de nuevo
+          </Btn>
+        </Row>
+      </BottomBar>
+      <FacturaSheet open={showFactura} onClose={()=>setShowFactura(false)}/>
     </Screen>
   );
 }
@@ -971,13 +1238,14 @@ function App() {
     case 'home':      view=<ClientHome nav={go}/>;break;
     case 'request':   view=<ClientRequest nav={go}/>;break;
     case 'searching': view=<ClientSearching nav={go}/>;break;
-    case 'enroute':   view=<ClientEnRoute progress={enrouteProgress} eta={enrouteEta}/>;break;
+    case 'enroute':   view=<ClientEnRoute progress={enrouteProgress} eta={enrouteEta} nav={go}/>;break;
     case 'waiting':   view=<ClientWaitingDiag stage={waitingStage}/>;break;
     case 'notif':     view=<ClientNotif nav={go}/>;break;
     case 'acuerdo':   view=<ClientAcuerdo nav={go}/>;break;
     case 'approved':  view=<ClientApproved nav={go}/>;break;
     case 'working':   view=<ClientWorking doneSteps={workingStep}/>;break;
     case 'closed':    view=<ClientClosed nav={go} rated={5}/>;break;
+    case 'past':      view=<ClientPast nav={go}/>;break;
     default:          view=<ClientHome nav={go}/>;
   }
 
