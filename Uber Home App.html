@@ -1,0 +1,996 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Uber Home</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #0B0B0C;
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; overflow: hidden; }
+  button { font-family: inherit; cursor: pointer; }
+  ol, ul { font-family: inherit; }
+
+  @keyframes pop { 0%{transform:scale(0)} 70%{transform:scale(1.1)} 100%{transform:scale(1)} }
+  @keyframes pulseDot { 0%,100%{opacity:1} 50%{opacity:.55} }
+  @keyframes ripple { 0%{opacity:.9;transform:scale(.4)} 100%{opacity:0;transform:scale(2.2)} }
+  @keyframes radar  { 0%{opacity:.9;transform:scale(.2)} 100%{opacity:0;transform:scale(1)} }
+  @keyframes notifDrop { 0%{opacity:0;transform:translateY(-30px)} 100%{opacity:1;transform:translateY(0)} }
+  @keyframes phoneFade { 0%{opacity:0;transform:scale(.985)} 100%{opacity:1;transform:scale(1)} }
+  ::-webkit-scrollbar { width:0; height:0; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+
+<script type="text/babel">
+
+// ─────────────────────────────────────────────────────────────
+// ios-frame.jsx — iOS device frame + chrome
+// ─────────────────────────────────────────────────────────────
+
+function IOSStatusBar({ dark = false, time = '9:41' }) {
+  const c = dark ? '#fff' : '#000';
+  return (
+    <div style={{
+      display:'flex', gap:154, alignItems:'center', justifyContent:'center',
+      padding:'21px 24px 19px', boxSizing:'border-box',
+      position:'relative', zIndex:20, width:'100%',
+    }}>
+      <div style={{flex:1,height:22,display:'flex',alignItems:'center',justifyContent:'center',paddingTop:1.5}}>
+        <span style={{fontFamily:'-apple-system,"SF Pro",system-ui',fontWeight:590,fontSize:17,lineHeight:'22px',color:c}}>{time}</span>
+      </div>
+      <div style={{flex:1,height:22,display:'flex',alignItems:'center',justifyContent:'center',gap:7,paddingTop:1,paddingRight:1}}>
+        <svg width="19" height="12" viewBox="0 0 19 12">
+          <rect x="0" y="7.5" width="3.2" height="4.5" rx="0.7" fill={c}/>
+          <rect x="4.8" y="5" width="3.2" height="7" rx="0.7" fill={c}/>
+          <rect x="9.6" y="2.5" width="3.2" height="9.5" rx="0.7" fill={c}/>
+          <rect x="14.4" y="0" width="3.2" height="12" rx="0.7" fill={c}/>
+        </svg>
+        <svg width="17" height="12" viewBox="0 0 17 12">
+          <path d="M8.5 3.2C10.8 3.2 12.9 4.1 14.4 5.6L15.5 4.5C13.7 2.7 11.2 1.5 8.5 1.5C5.8 1.5 3.3 2.7 1.5 4.5L2.6 5.6C4.1 4.1 6.2 3.2 8.5 3.2Z" fill={c}/>
+          <path d="M8.5 6.8C9.9 6.8 11.1 7.3 12 8.2L13.1 7.1C11.8 5.9 10.2 5.1 8.5 5.1C6.8 5.1 5.2 5.9 3.9 7.1L5 8.2C5.9 7.3 7.1 6.8 8.5 6.8Z" fill={c}/>
+          <circle cx="8.5" cy="10.5" r="1.5" fill={c}/>
+        </svg>
+        <svg width="27" height="13" viewBox="0 0 27 13">
+          <rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke={c} strokeOpacity="0.35" fill="none"/>
+          <rect x="2" y="2" width="20" height="9" rx="2" fill={c}/>
+          <path d="M25 4.5V8.5C25.8 8.2 26.5 7.2 26.5 6.5C26.5 5.8 25.8 4.8 25 4.5Z" fill={c} fillOpacity="0.4"/>
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+function IOSGlassPill({ children, dark = false, style = {} }) {
+  return (
+    <div style={{
+      height:44,minWidth:44,borderRadius:9999,position:'relative',overflow:'hidden',
+      display:'flex',alignItems:'center',justifyContent:'center',
+      boxShadow: dark
+        ? '0 2px 6px rgba(0,0,0,0.35),0 6px 16px rgba(0,0,0,0.2)'
+        : '0 1px 3px rgba(0,0,0,0.07),0 3px 10px rgba(0,0,0,0.06)',
+      ...style,
+    }}>
+      <div style={{position:'absolute',inset:0,borderRadius:9999,backdropFilter:'blur(12px) saturate(180%)',WebkitBackdropFilter:'blur(12px) saturate(180%)',background:dark?'rgba(120,120,128,0.28)':'rgba(255,255,255,0.5)'}}/>
+      <div style={{position:'absolute',inset:0,borderRadius:9999,boxShadow:dark?'inset 1.5px 1.5px 1px rgba(255,255,255,0.15),inset -1px -1px 1px rgba(255,255,255,0.08)':'inset 1.5px 1.5px 1px rgba(255,255,255,0.7),inset -1px -1px 1px rgba(255,255,255,0.4)',border:dark?'0.5px solid rgba(255,255,255,0.15)':'0.5px solid rgba(0,0,0,0.06)'}}/>
+      <div style={{position:'relative',zIndex:1,display:'flex',alignItems:'center',padding:'0 4px'}}>{children}</div>
+    </div>
+  );
+}
+
+function IOSDevice({ children, width = 402, height = 874, dark = false }) {
+  return (
+    <div style={{
+      width, height, borderRadius:48, overflow:'hidden', position:'relative',
+      background: dark ? '#000' : '#F2F2F7',
+      boxShadow:'0 40px 80px rgba(0,0,0,0.18),0 0 0 1px rgba(0,0,0,0.12)',
+      fontFamily:'-apple-system,system-ui,sans-serif', WebkitFontSmoothing:'antialiased',
+    }}>
+      <div style={{position:'absolute',top:11,left:'50%',transform:'translateX(-50%)',width:126,height:37,borderRadius:24,background:'#000',zIndex:50}}/>
+      <div style={{position:'absolute',top:0,left:0,right:0,zIndex:10}}>
+        <IOSStatusBar dark={dark}/>
+      </div>
+      <div style={{height:'100%',display:'flex',flexDirection:'column'}}>
+        <div style={{flex:1,overflow:'auto'}}>{children}</div>
+      </div>
+      <div style={{position:'absolute',bottom:0,left:0,right:0,zIndex:60,height:34,display:'flex',justifyContent:'center',alignItems:'flex-end',paddingBottom:8,pointerEvents:'none'}}>
+        <div style={{width:139,height:5,borderRadius:100,background:dark?'rgba(255,255,255,0.7)':'rgba(0,0,0,0.25)'}}/>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// ui.jsx — shared primitives
+// ─────────────────────────────────────────────────────────────
+
+const UH = {
+  bg:'#F2F2F7', surface:'#FFFFFF', ink:'#0B0B0C', ink2:'#2A2A2D',
+  muted:'#6B6B70', line:'#E6E5DF', line2:'#D6D5CE',
+  accent:'#2D9B6F', accentInk:'#145235',
+  accentSoft:'#E8F7F1', warn:'#D4820A',
+  red:'#FF3B30', blue:'#007AFF',
+  font:'-apple-system,"SF Pro Text","Inter",system-ui,sans-serif',
+};
+
+function Stack({ children, gap=12, style }) {
+  return <div style={{display:'flex',flexDirection:'column',gap,...style}}>{children}</div>;
+}
+function Row({ children, gap=8, align='center', justify='flex-start', style }) {
+  return <div style={{display:'flex',gap,alignItems:align,justifyContent:justify,...style}}>{children}</div>;
+}
+function Screen({ children, bg=UH.bg, style }) {
+  return (
+    <div style={{width:'100%',height:'100%',background:bg,color:UH.ink,fontFamily:UH.font,
+      display:'flex',flexDirection:'column',overflow:'hidden',position:'relative',...style}}>
+      {children}
+    </div>
+  );
+}
+function ScrollArea({ children, style }) {
+  return <div style={{flex:1,overflow:'auto',...style}}>{children}</div>;
+}
+function Card({ children, style, onClick }) {
+  return (
+    <div onClick={onClick} style={{background:UH.surface,borderRadius:16,
+      boxShadow:'0 1px 2px rgba(0,0,0,.04)',border:'0.5px solid rgba(0,0,0,.06)',...style}}>
+      {children}
+    </div>
+  );
+}
+function AppHeader({ left, title, right, sub, big, bg='transparent' }) {
+  return (
+    <div style={{padding:'52px 20px 8px',background:bg}}>
+      <Row justify="space-between" align="center" style={{minHeight:32}}>
+        <div style={{minWidth:32,display:'flex'}}>{left}</div>
+        <div style={{fontSize:16,fontWeight:600,color:UH.ink,textAlign:'center',flex:1}}>{!big&&title}</div>
+        <div style={{minWidth:32,display:'flex',justifyContent:'flex-end'}}>{right}</div>
+      </Row>
+      {big&&(
+        <div style={{marginTop:8}}>
+          <div style={{fontSize:32,fontWeight:700,letterSpacing:'-0.02em',color:UH.ink}}>{title}</div>
+          {sub&&<div style={{fontSize:14,color:UH.muted,marginTop:2}}>{sub}</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+function BrandMark({ size=28, accent=true }) {
+  return (
+    <div style={{width:size,height:size,borderRadius:size*0.28,background:UH.ink,color:'#fff',
+      display:'grid',placeItems:'center',fontWeight:700,fontSize:size*0.5,position:'relative',letterSpacing:'-0.02em'}}>
+      u
+      {accent&&<div style={{position:'absolute',right:-3,bottom:-3,width:size*0.32,height:size*0.32,
+        borderRadius:'50%',background:UH.accent,border:'2px solid #fff'}}/>}
+    </div>
+  );
+}
+function Pill({ children, tone='neutral', size='sm', icon }) {
+  const tones={
+    neutral:{background:'rgba(0,0,0,.06)',color:UH.ink2},
+    accent:{background:UH.accentSoft,color:UH.accentInk,border:'1px solid #A8D9C4'},
+    inverted:{background:UH.ink,color:'#fff'},
+    warn:{background:'#FEF3DC',color:'#7A4500',border:'1px solid #F5C97A'},
+    blue:{background:'rgba(0,122,255,.12)',color:UH.blue},
+  };
+  const t=tones[tone]||tones.neutral;
+  return (
+    <span style={{display:'inline-flex',alignItems:'center',gap:5,
+      padding:size==='sm'?'4px 9px':'6px 12px',borderRadius:999,
+      fontSize:size==='sm'?11:12.5,fontWeight:600,letterSpacing:'0.02em',whiteSpace:'nowrap',...t}}>
+      {icon}{children}
+    </span>
+  );
+}
+function Btn({ children, kind='primary', size='md', onClick, full, icon, iconRight, disabled, style }) {
+  const sizes={sm:{padding:'8px 14px',fontSize:13,radius:10},md:{padding:'14px 18px',fontSize:15,radius:14},lg:{padding:'18px 22px',fontSize:16,radius:16}};
+  const s=sizes[size];
+  const kinds={
+    primary:{background:UH.ink,color:'#fff'},
+    accent:{background:UH.accent,color:'#fff'},
+    danger:{background:UH.red,color:'#fff'},
+    ghost:{background:'rgba(0,0,0,.06)',color:UH.ink},
+    outline:{background:'transparent',color:UH.ink,border:'1px solid '+UH.line2},
+    glass:{background:'rgba(255,255,255,.85)',color:UH.ink,backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)',boxShadow:'0 4px 14px rgba(0,0,0,.08)'},
+  };
+  const k=kinds[kind]||kinds.primary;
+  return (
+    <button onClick={disabled?undefined:onClick} disabled={disabled} style={{
+      display:'inline-flex',alignItems:'center',justifyContent:'center',gap:8,
+      padding:s.padding,borderRadius:s.radius,border:'none',fontWeight:600,
+      fontSize:s.fontSize,fontFamily:UH.font,cursor:disabled?'not-allowed':'pointer',
+      width:full?'100%':'auto',opacity:disabled?0.4:1,transition:'all .2s ease',...k,...style}}>
+      {icon}<span>{children}</span>{iconRight}
+    </button>
+  );
+}
+function MapView({ progress=0.5, dark=false, height=280, label }) {
+  const path='M 30 240 Q 80 200 130 220 T 240 180 T 330 110 T 380 60';
+  return (
+    <div style={{position:'relative',height,width:'100%',
+      background:dark?'#1c1c1e':'#E9E7DD',
+      backgroundImage:dark?'radial-gradient(120% 80% at 20% 0%,#2a2a2d 0%,#1c1c1e 60%)':'radial-gradient(120% 80% at 20% 0%,#F6F4EC 0%,#E9E7DD 60%)',
+      overflow:'hidden'}}>
+      <svg viewBox="0 0 400 280" style={{width:'100%',height:'100%',display:'block'}}>
+        <g stroke={dark?'#2a2a2d':'#D6D2C3'} strokeWidth="14" fill="none" strokeLinecap="round">
+          <path d="M -20 200 L 220 200 L 280 140 L 420 140"/>
+          <path d="M 80 -20 L 80 180 L 200 280"/>
+          <path d="M 320 -20 L 320 120 L 420 200"/>
+        </g>
+        <g stroke={dark?'#1f1f22':'#CFCBBA'} strokeWidth="1" fill="none">
+          <path d="M -20 240 L 420 240"/><path d="M -20 80 L 420 80"/>
+        </g>
+        <path d={path} stroke={UH.accent} strokeWidth="4" fill="none" strokeLinecap="round"/>
+        <circle cx="30" cy="240" r="7" fill="#fff" stroke={UH.ink} strokeWidth="2.5"/>
+        <g transform="translate(380,60)"><circle r="11" fill={UH.ink}/><circle r="4" fill="#fff"/></g>
+        <CarMarker progress={progress}/>
+      </svg>
+      {label&&<div style={{position:'absolute',top:12,left:12,padding:'6px 10px',
+        background:'rgba(255,255,255,.92)',borderRadius:999,fontSize:11.5,fontWeight:600,
+        boxShadow:'0 2px 8px rgba(0,0,0,.08)',color:UH.ink}}>{label}</div>}
+    </div>
+  );
+}
+function CarMarker({ progress }) {
+  const pts=[[30,240],[60,225],[100,218],[150,210],[200,195],[240,180],[280,150],[320,120],[360,85],[380,60]];
+  const i=Math.max(0,Math.min(pts.length-1,Math.floor(progress*(pts.length-1))));
+  const [x,y]=pts[i];
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <circle r="14" fill="rgba(11,11,12,.15)"/>
+      <circle r="9" fill={UH.ink}/>
+      <circle r="9" fill="none" stroke={UH.accent} strokeWidth="2.5"/>
+      <circle cx="0" cy="-1" r="3" fill="#fff"/>
+    </g>
+  );
+}
+function Avatar({ name='CM', size=40, accent }) {
+  const hue=name.charCodeAt(0)*13%360;
+  return (
+    <div style={{width:size,height:size,borderRadius:'50%',
+      background:`linear-gradient(135deg,hsl(${hue},45%,62%),hsl(${hue},50%,42%))`,
+      color:'#fff',fontWeight:600,fontSize:size*0.4,display:'grid',placeItems:'center',
+      letterSpacing:'0.02em',position:'relative',flexShrink:0}}>
+      {name.slice(0,2).toUpperCase()}
+      {accent&&<div style={{position:'absolute',right:-2,bottom:-2,width:size*0.32,height:size*0.32,
+        borderRadius:'50%',background:UH.accent,border:'2px solid #fff'}}/>}
+    </div>
+  );
+}
+function Ic({ name, size=18, color='currentColor', strokeWidth=2 }) {
+  const p={width:size,height:size,viewBox:'0 0 24 24',fill:'none',stroke:color,strokeWidth,strokeLinecap:'round',strokeLinejoin:'round'};
+  const paths={
+    arrow:<><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13 6 19 12 13 18"/></>,
+    back:<><line x1="19" y1="12" x2="5" y2="12"/><polyline points="11 18 5 12 11 6"/></>,
+    close:<><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></>,
+    check:<polyline points="20 6 9 17 4 12"/>,
+    plus:<><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>,
+    phone:<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>,
+    chat:<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>,
+    shield:<><path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z"/></>,
+    shieldCheck:<><path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z"/><path d="m9 12 2 2 4-4"/></>,
+    lock:<><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>,
+    pin:<><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></>,
+    clock:<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
+    star:<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>,
+    user:<><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>,
+    camera:<><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></>,
+    chevR:<polyline points="9 18 15 12 9 6"/>,
+    bell:<><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></>,
+    wrench:<path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-2.4 2.6-2.6a4 4 0 0 0-1.6-.6z"/>,
+    flame:<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>,
+    zap:<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>,
+    key:<><circle cx="8" cy="15" r="4"/><path d="m10.85 12.15 8.4-8.4"/><path d="m18 5 3 3"/><path d="m15 8 3 3"/></>,
+    ac:<><circle cx="12" cy="12" r="9"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="5.5" y1="5.5" x2="18.5" y2="18.5"/><line x1="18.5" y1="5.5" x2="5.5" y2="18.5"/></>,
+    paint:<><path d="M19 11h2v4a4 4 0 0 1-4 4h-2"/><path d="M3 11V4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3"/><rect x="2" y="11" width="13" height="8" rx="2"/></>,
+    image:<><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></>,
+    money:<><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></>,
+    info:<><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></>,
+  };
+  return <svg {...p}>{paths[name]||null}</svg>;
+}
+function ListGroup({ children, header, footer, style }) {
+  return (
+    <div style={{...style}}>
+      {header&&<div style={{padding:'8px 32px 6px',fontSize:12,color:UH.muted,letterSpacing:'0.04em',textTransform:'uppercase',fontWeight:600}}>{header}</div>}
+      <div style={{margin:'0 16px',background:UH.surface,borderRadius:14,overflow:'hidden',boxShadow:'0 1px 2px rgba(0,0,0,.03)'}}>{children}</div>
+      {footer&&<div style={{padding:'8px 32px',fontSize:12,color:UH.muted,lineHeight:1.4}}>{footer}</div>}
+    </div>
+  );
+}
+function ListRow({ icon, title, sub, right, chev, onClick, isLast, accent }) {
+  return (
+    <div onClick={onClick} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',
+      borderBottom:isLast?'none':'0.5px solid rgba(0,0,0,.06)',cursor:onClick?'pointer':'default'}}>
+      {icon&&<div style={{width:32,height:32,borderRadius:8,background:accent?UH.accent:'rgba(0,0,0,.05)',
+        color:accent?'#fff':UH.ink2,display:'grid',placeItems:'center',flexShrink:0}}>{icon}</div>}
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontSize:15,fontWeight:500,color:UH.ink,lineHeight:1.2}}>{title}</div>
+        {sub&&<div style={{fontSize:12.5,color:UH.muted,marginTop:2}}>{sub}</div>}
+      </div>
+      {right&&<div style={{fontSize:13,color:UH.muted,fontWeight:500}}>{right}</div>}
+      {chev&&<Ic name="chevR" size={14} color={UH.muted}/>}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// client.jsx — all screens
+// ─────────────────────────────────────────────────────────────
+
+const { useState, useEffect, useRef } = React;
+
+function BottomBar({ children }) {
+  return (
+    <div style={{padding:'12px 16px 28px',background:'rgba(242,242,247,.92)',
+      backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)',
+      borderTop:'0.5px solid rgba(0,0,0,.06)'}}>{children}</div>
+  );
+}
+
+function ClientHome({ nav }) {
+  const cats=[
+    {name:'Plomería',icon:'wrench',selected:true},{name:'Eléctrico',icon:'zap'},
+    {name:'Gas',icon:'flame'},{name:'Cerrajería',icon:'key'},
+    {name:'A/C',icon:'ac'},{name:'Pintura',icon:'paint'},
+  ];
+  return (
+    <Screen>
+      <AppHeader big title="Hola, María" sub="Cra. 13 #82-45, Chapinero"
+        left={<BrandMark size={28}/>} right={<Avatar name="MR" size={32}/>}/>
+      <ScrollArea>
+        <div style={{padding:'14px 16px 0'}}>
+          <div style={{background:UH.ink,color:'#fff',borderRadius:20,padding:18,position:'relative',overflow:'hidden'}}>
+            <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:8}}>
+              <div style={{width:6,height:6,borderRadius:'50%',background:UH.accent}}></div>
+              <span style={{fontSize:10.5,letterSpacing:'0.08em',textTransform:'uppercase',fontWeight:600,color:'rgba(255,255,255,.7)'}}>Acuerdo de Diagnóstico</span>
+            </div>
+            <div style={{fontSize:19,fontWeight:600,letterSpacing:'-0.015em',lineHeight:1.25}}>
+              Apruebas el precio<br/>antes de que empiece.
+            </div>
+            <div style={{marginTop:14,display:'flex',gap:8}}>
+              <Btn kind="glass" size="sm" style={{color:UH.ink}}>Cómo funciona</Btn>
+            </div>
+          </div>
+        </div>
+        <div style={{padding:'20px 16px 4px',fontSize:13,fontWeight:600,color:UH.muted,letterSpacing:'0.02em'}}>¿Qué necesitas reparar?</div>
+        <div style={{padding:'8px 16px',display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>
+          {cats.map(c=>(
+            <div key={c.name} style={{background:c.selected?UH.ink:UH.surface,color:c.selected?'#fff':UH.ink,
+              borderRadius:14,padding:14,display:'flex',flexDirection:'column',gap:10,minHeight:84,
+              boxShadow:'0 1px 2px rgba(0,0,0,.04)',border:c.selected?'none':'0.5px solid rgba(0,0,0,.04)'}}>
+              <div style={{width:30,height:30,borderRadius:8,background:c.selected?'rgba(255,255,255,.15)':'rgba(0,0,0,.05)',display:'grid',placeItems:'center'}}>
+                <Ic name={c.icon} size={16} color={c.selected?'#fff':UH.ink} strokeWidth={2}/>
+              </div>
+              <div style={{fontSize:13,fontWeight:600,letterSpacing:'-0.01em'}}>{c.name}</div>
+            </div>
+          ))}
+        </div>
+        <ListGroup header="Reciente" style={{marginTop:20}}>
+          <ListRow icon={<Ic name="shieldCheck" size={16} color={UH.accent}/>}
+            title="Calentador — reparado" sub="Hace 2 meses · Garantía activa" right="$ 145k" chev isLast/>
+        </ListGroup>
+        <div style={{height:100}}/>
+      </ScrollArea>
+      <BottomBar>
+        <Btn kind="accent" full size="lg" onClick={()=>nav&&nav('request')} iconRight={<Ic name="arrow" size={16} color="#fff"/>}>
+          Pedir servicio
+        </Btn>
+      </BottomBar>
+    </Screen>
+  );
+}
+
+function ClientRequest({ nav }) {
+  return (
+    <Screen>
+      <AppHeader title="Nueva solicitud"
+        left={<span onClick={()=>nav&&nav('home')} style={{cursor:'pointer'}}><Ic name="back" size={20}/></span>}/>
+      <ScrollArea>
+        <div style={{padding:'12px 16px 0'}}>
+          <Card style={{padding:14,display:'flex',alignItems:'center',gap:12}}>
+            <div style={{width:38,height:38,borderRadius:10,background:UH.ink,color:'#fff',display:'grid',placeItems:'center'}}>
+              <Ic name="wrench" size={18} color="#fff"/>
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:15,fontWeight:600}}>Plomería</div>
+              <div style={{fontSize:12.5,color:UH.muted}}>Cambiar categoría</div>
+            </div>
+            <Ic name="chevR" size={14} color={UH.muted}/>
+          </Card>
+        </div>
+        <div style={{padding:'20px 16px 6px',fontSize:13,fontWeight:600,color:UH.muted}}>Tipo de servicio</div>
+        <div style={{padding:'0 16px'}}>
+          <div style={{background:'rgba(0,0,0,.06)',padding:4,borderRadius:12,display:'grid',gridTemplateColumns:'1fr 1fr',gap:4}}>
+            <div style={{padding:'10px',background:UH.ink,color:'#fff',borderRadius:9,fontSize:13.5,fontWeight:600,textAlign:'center'}}>⚡ Urgente · Flash</div>
+            <div style={{padding:'10px',color:UH.ink2,fontSize:13.5,fontWeight:500,textAlign:'center'}}>Programado</div>
+          </div>
+          <div style={{fontSize:11.5,color:UH.muted,marginTop:8,lineHeight:1.4}}>
+            Acuerdo Flash con 3 campos · Llegada en &lt; 30 min · Rango cerrado obligatorio.
+          </div>
+        </div>
+        <div style={{padding:'18px 16px 6px',fontSize:13,fontWeight:600,color:UH.muted}}>¿Qué pasa?</div>
+        <div style={{padding:'0 16px'}}>
+          <Card style={{padding:14}}>
+            <div style={{fontSize:14.5,color:UH.ink,lineHeight:1.45,minHeight:56}}>
+              Hay una fuga lenta debajo del lavaplatos. Llevo dos días con un balde.
+            </div>
+            <div style={{display:'flex',gap:8,marginTop:12,alignItems:'center'}}>
+              <div style={{width:52,height:52,borderRadius:10,border:'1.5px dashed '+UH.line2,display:'grid',placeItems:'center',color:UH.muted}}>
+                <Ic name="camera" size={18}/>
+              </div>
+              <div style={{width:52,height:52,borderRadius:10,background:'linear-gradient(135deg,#C8C5B8,#A09D90)',position:'relative'}}>
+                <Ic name="image" size={14} color="#fff"/>
+              </div>
+              <div style={{fontSize:12,color:UH.muted,marginLeft:4}}>1 foto adjunta</div>
+            </div>
+          </Card>
+        </div>
+        <div style={{padding:'18px 16px 6px',fontSize:13,fontWeight:600,color:UH.muted}}>Dirección</div>
+        <div style={{padding:'0 16px'}}>
+          <Card style={{overflow:'hidden'}}>
+            <MapView height={120} progress={0}/>
+            <div style={{padding:14,display:'flex',alignItems:'center',gap:10}}>
+              <Ic name="pin" size={18} color={UH.ink}/>
+              <div style={{flex:1}}>
+                <div style={{fontSize:14,fontWeight:600}}>Cra. 13 #82-45</div>
+                <div style={{fontSize:12,color:UH.muted}}>Chapinero · Apto 502</div>
+              </div>
+            </div>
+          </Card>
+        </div>
+        <div style={{padding:16,fontSize:12,color:UH.muted,lineHeight:1.45,display:'flex',gap:8}}>
+          <Ic name="info" size={14} color={UH.muted}/>
+          <span>Recibirás un <strong style={{color:UH.ink}}>Acuerdo de Diagnóstico Cerrado</strong> con rango de precio antes de que el técnico empiece. Solo pagas si lo apruebas.</span>
+        </div>
+        <div style={{height:110}}/>
+      </ScrollArea>
+      <BottomBar>
+        <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:10,padding:'0 4px'}}>
+          <Ic name="info" size={13} color={UH.muted}/>
+          <span style={{fontSize:12,color:UH.muted}}>Visita: <strong style={{color:UH.ink}}>$ 20.000</strong> · solo si rechazas el Acuerdo</span>
+        </div>
+        <Btn kind="accent" full size="lg" onClick={()=>nav&&nav('searching')} iconRight={<Ic name="arrow" size={16} color="#fff"/>}>
+          Buscar técnico cerca
+        </Btn>
+      </BottomBar>
+    </Screen>
+  );
+}
+
+function ClientSearching({ nav }) {
+  return (
+    <Screen bg={UH.ink} style={{color:'#fff'}}>
+      <AppHeader title="" left={<span onClick={()=>nav&&nav('home')} style={{cursor:'pointer'}}><Ic name="close" size={20} color="#fff"/></span>}/>
+      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'0 24px'}}>
+        <Radar/>
+        <div style={{marginTop:28,fontSize:20,fontWeight:600,color:'#fff',letterSpacing:'-0.015em'}}>Buscando técnico cerca</div>
+        <div style={{marginTop:8,fontSize:14,color:'rgba(255,255,255,.6)'}}>Hay 4 técnicos verificados en tu zona</div>
+        <div style={{marginTop:32,width:'100%',background:'rgba(255,255,255,.08)',borderRadius:14,padding:14,display:'flex',alignItems:'center',gap:12}}>
+          <Ic name="shieldCheck" size={20} color={UH.accent}/>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13.5,color:'#fff',fontWeight:600}}>Solo técnicos con background check</div>
+            <div style={{fontSize:12,color:'rgba(255,255,255,.55)',marginTop:2}}>Identidad verificada · 4.8★ promedio en tu zona</div>
+          </div>
+        </div>
+      </div>
+      <div style={{height:60}}></div>
+    </Screen>
+  );
+}
+function Radar() {
+  return (
+    <div style={{width:220,height:220,position:'relative'}}>
+      {[0,1,2].map(i=>(
+        <div key={i} style={{position:'absolute',inset:0,borderRadius:'50%',
+          border:'1.5px solid '+UH.accent,opacity:0.5,
+          animation:`radar 2.4s ${i*0.8}s infinite ease-out`}}/>
+      ))}
+      <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',
+        width:64,height:64,borderRadius:'50%',background:UH.accent,display:'grid',placeItems:'center',
+        boxShadow:'0 0 40px '+UH.accent}}>
+        <BrandMark size={32} accent={false}/>
+      </div>
+    </div>
+  );
+}
+
+function ClientEnRoute({ progress=0.35, eta=14 }) {
+  return (
+    <Screen>
+      <div style={{position:'absolute',top:0,left:0,right:0,height:'60%',zIndex:0}}>
+        <MapView height="100%" progress={progress}/>
+      </div>
+      <div style={{position:'relative',zIndex:5,padding:'52px 16px 0'}}>
+        <Row justify="space-between">
+          <Btn kind="glass" size="sm" icon={<Ic name="back" size={14}/>}>Volver</Btn>
+          <Btn kind="glass" size="sm" icon={<Ic name="shield" size={14} color={UH.accent}/>}>Soporte</Btn>
+        </Row>
+      </div>
+      <div style={{flex:1}}></div>
+      <div style={{background:UH.surface,borderRadius:'24px 24px 0 0',padding:18,paddingBottom:28,position:'relative',zIndex:5,boxShadow:'0 -10px 30px rgba(0,0,0,.08)'}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
+          <div>
+            <div style={{fontSize:12,color:UH.muted,fontWeight:600,letterSpacing:'0.04em',textTransform:'uppercase'}}>Llegada estimada</div>
+            <div style={{fontSize:28,fontWeight:700,letterSpacing:'-0.02em',color:UH.ink,marginTop:2}}>{eta} min</div>
+          </div>
+          <Pill tone="accent" icon={<div style={{width:6,height:6,borderRadius:'50%',background:UH.accent}}/>}>EN CAMINO</Pill>
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 0',borderTop:'0.5px solid rgba(0,0,0,.06)',borderBottom:'0.5px solid rgba(0,0,0,.06)'}}>
+          <Avatar name="CM" size={48} accent/>
+          <div style={{flex:1}}>
+            <div style={{fontSize:15,fontWeight:600}}>Carlos Mendoza</div>
+            <div style={{fontSize:12.5,color:UH.muted,display:'flex',alignItems:'center',gap:4}}>
+              <Ic name="star" size={12} color={UH.warn}/> 4.92 · 312 servicios · Plomería
+            </div>
+          </div>
+          <Btn kind="ghost" size="sm" icon={<Ic name="phone" size={14}/>}/>
+          <Btn kind="ghost" size="sm" icon={<Ic name="chat" size={14}/>}/>
+        </div>
+        <div style={{marginTop:14,padding:12,background:UH.accentSoft,borderRadius:12,display:'flex',gap:10,alignItems:'flex-start'}}>
+          <Ic name="bell" size={16} color={UH.accentInk}/>
+          <div style={{fontSize:12.5,color:UH.accentInk,lineHeight:1.4}}>
+            <strong>Próximo paso:</strong> Carlos diagnosticará en sitio y te enviará el <strong>Acuerdo de Diagnóstico Cerrado</strong> a tu celular.
+          </div>
+        </div>
+      </div>
+    </Screen>
+  );
+}
+
+function ClientWaitingDiag({ stage='arrived' }) {
+  const stages={
+    arrived:{dot:1},diagnosing:{dot:2},drafting:{dot:3},
+  };
+  const s=stages[stage]||stages.arrived;
+  return (
+    <Screen>
+      <AppHeader title="En sitio" left={<Ic name="back" size={20}/>}
+        right={<Btn kind="ghost" size="sm" icon={<Ic name="shield" size={14} color={UH.accent}/>}>Soporte</Btn>}/>
+      <ScrollArea>
+        <div style={{padding:'8px 16px 0'}}>
+          <Card style={{padding:16}}>
+            <Row gap={12}>
+              <Avatar name="CM" size={44} accent/>
+              <div style={{flex:1}}>
+                <div style={{fontSize:15,fontWeight:600}}>Carlos Mendoza</div>
+                <div style={{fontSize:12.5,color:UH.accent,fontWeight:600}}>● En sitio · Plomería</div>
+              </div>
+            </Row>
+          </Card>
+        </div>
+        <div style={{padding:'16px 16px 0'}}>
+          <Card style={{padding:18}}>
+            <Stack gap={14}>
+              {[
+                {k:'arrived',title:'Llegó al sitio',sub:'Hace 4 minutos'},
+                {k:'diagnosing',title:'Diagnosticando',sub:'Revisando el problema'},
+                {k:'drafting',title:'Redactando Acuerdo',sub:'Definiendo el rango de precio'},
+              ].map((step,i)=>{
+                const isDone=s.dot>i+1,isActive=s.dot===i+1,isPending=s.dot<i+1;
+                return (
+                  <Row key={step.k} gap={12} align="flex-start">
+                    <div style={{width:24,height:24,borderRadius:'50%',
+                      background:isDone||isActive?UH.accent:'rgba(0,0,0,.06)',
+                      color:'#fff',display:'grid',placeItems:'center',flexShrink:0,marginTop:1,
+                      animation:isActive?'pulseDot 1.6s ease-in-out infinite':'none'}}>
+                      {isDone?<Ic name="check" size={12} color="#fff" strokeWidth={3}/>:
+                        isActive?<div style={{width:8,height:8,borderRadius:'50%',background:'#fff'}}/>:null}
+                    </div>
+                    <div>
+                      <div style={{fontSize:14,fontWeight:600,color:isPending?UH.muted:UH.ink}}>{step.title}</div>
+                      <div style={{fontSize:12,color:UH.muted,marginTop:2}}>{step.sub}</div>
+                    </div>
+                  </Row>
+                );
+              })}
+            </Stack>
+          </Card>
+        </div>
+        <div style={{padding:'16px'}}>
+          <div style={{background:UH.ink,color:'#fff',borderRadius:16,padding:16}}>
+            <Row gap={10}>
+              <div style={{width:32,height:32,borderRadius:8,background:'rgba(255,255,255,.12)',display:'grid',placeItems:'center'}}>
+                <Ic name="bell" size={16} color="#fff"/>
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13.5,fontWeight:600}}>Te llegará un Acuerdo en breve</div>
+                <div style={{fontSize:12,color:'rgba(255,255,255,.65)',marginTop:4,lineHeight:1.45}}>
+                  Carlos no puede comenzar hasta que tú apruebes el alcance y el rango de precio.
+                </div>
+              </div>
+            </Row>
+          </div>
+        </div>
+      </ScrollArea>
+    </Screen>
+  );
+}
+
+function ClientNotif({ nav }) {
+  return (
+    <Screen bg="linear-gradient(180deg,#2a2a2d 0%,#0B0B0C 50%)" style={{color:'#fff'}}>
+      <div style={{paddingTop:80,textAlign:'center',color:'rgba(255,255,255,.55)',fontSize:13,fontWeight:500}}>
+        miércoles 16 de mayo
+      </div>
+      <div style={{textAlign:'center',marginTop:4,fontSize:78,fontWeight:300,color:'#fff',letterSpacing:'-0.04em',lineHeight:1}}>9:41</div>
+      <div style={{padding:'40px 14px 0'}}>
+        <div onClick={()=>nav&&nav('acuerdo')} style={{
+          background:'rgba(255,255,255,.16)',backdropFilter:'blur(30px)',WebkitBackdropFilter:'blur(30px)',
+          borderRadius:22,padding:14,color:'#fff',border:'0.5px solid rgba(255,255,255,.2)',
+          animation:'notifDrop .5s cubic-bezier(.18,.89,.32,1.28)',cursor:'pointer'}}>
+          <Row gap={10} align="center" style={{marginBottom:8}}>
+            <BrandMark size={26} accent={false}/>
+            <div style={{flex:1,fontSize:12,color:'rgba(255,255,255,.7)',fontWeight:500}}>UBER HOME</div>
+            <div style={{fontSize:11,color:'rgba(255,255,255,.55)'}}>ahora</div>
+          </Row>
+          <div style={{fontSize:14.5,fontWeight:600,marginBottom:4}}>Acuerdo de Diagnóstico recibido</div>
+          <div style={{fontSize:13,color:'rgba(255,255,255,.85)',lineHeight:1.4}}>
+            Carlos te envió un rango cerrado de <strong>$ 145.000 – 180.000</strong>. Aprobarlo activa tu garantía de 30 días.
+          </div>
+        </div>
+      </div>
+      <div style={{flex:1}}></div>
+      <div style={{textAlign:'center',paddingBottom:50,color:'rgba(255,255,255,.4)',fontSize:13,fontWeight:500}}>
+        Desliza hacia arriba para abrir
+      </div>
+    </Screen>
+  );
+}
+
+function ClientAcuerdo({ nav }) {
+  const [approving,setApproving]=useState(false);
+  const handleApprove=()=>{ setApproving(true); setTimeout(()=>{ nav&&nav('approved'); },900); };
+  return (
+    <Screen>
+      <AppHeader title="Acuerdo de Diagnóstico"
+        left={<span onClick={()=>!approving&&nav&&nav('home')} style={{cursor:'pointer'}}><Ic name="close" size={20}/></span>}
+        right={<Pill tone="warn">FLASH</Pill>}/>
+      <ScrollArea>
+        <div style={{padding:'4px 16px 0'}}>
+          <Card style={{padding:16}}>
+            <Row justify="space-between">
+              <Row gap={10}>
+                <BrandMark size={32}/>
+                <div>
+                  <div style={{fontSize:13.5,fontWeight:600}}>Acuerdo #UH-F-3014</div>
+                  <div style={{fontSize:11.5,color:UH.muted}}>Carlos M. · ahora · firmado</div>
+                </div>
+              </Row>
+              <Pill tone="accent" icon={<div style={{width:6,height:6,borderRadius:'50%',background:UH.accent}}/>}>CERRADO</Pill>
+            </Row>
+          </Card>
+        </div>
+        <div style={{padding:'12px 16px 0'}}>
+          <Card style={{padding:'4px 16px'}}>
+            <SealField label="¿Qué encontró?" value="Fuga lenta en la salida del sifón del lavaplatos. Empaque del tubo desgastado y rosca con sedimentos."/>
+            <SealField label="¿Qué hará?" value={(
+              <ol style={{margin:'6px 0 0',paddingLeft:18,color:UH.ink2,fontSize:14,lineHeight:1.55}}>
+                <li>Cerrar llave bajo el lavaplatos</li>
+                <li>Cambiar empaque y limpiar rosca</li>
+                <li>Probar 10 min sin escape</li>
+              </ol>
+            )}/>
+            <SealField last label="¿Cuánto costará?" value={(
+              <div>
+                <div style={{fontFamily:'"JetBrains Mono","SF Mono",monospace',fontSize:24,fontWeight:700,color:UH.ink,letterSpacing:'-0.01em'}}>
+                  $ 145.000 – 180.000 <span style={{fontSize:13,color:UH.muted,fontWeight:500}}>COP</span>
+                </div>
+                <div style={{fontSize:12,color:UH.muted,marginTop:4,lineHeight:1.4}}>Incluye mano de obra, empaque y prueba. Sin costos adicionales.</div>
+              </div>
+            )}/>
+          </Card>
+        </div>
+        <div style={{padding:'14px 16px 0'}}>
+          <div style={{background:UH.accentSoft,border:'1px solid #A8D9C4',borderRadius:14,padding:14,display:'flex',gap:12,alignItems:'center'}}>
+            <div style={{width:36,height:36,borderRadius:10,background:UH.accent,color:'#fff',display:'grid',placeItems:'center',flexShrink:0}}>
+              <Ic name="shieldCheck" size={18} color="#fff"/>
+            </div>
+            <div>
+              <div style={{fontSize:13.5,fontWeight:600,color:UH.accentInk}}>Aprobar activa la garantía de 30 días</div>
+              <div style={{fontSize:12,color:UH.accentInk,opacity:0.75,marginTop:3,lineHeight:1.4}}>Si la fuga reaparece, volvemos sin costo.</div>
+            </div>
+          </div>
+        </div>
+        <div style={{padding:'14px 16px',display:'flex',alignItems:'center',gap:8,color:UH.muted,fontSize:11.5}}>
+          <Ic name="lock" size={13} color={UH.muted}/>
+          <span>Firmado digitalmente · No editable después de aprobar</span>
+        </div>
+        <div style={{height:120}}></div>
+      </ScrollArea>
+      <BottomBar>
+        <Row gap={10}>
+          <Btn kind="ghost" size="lg" style={{flex:1}} onClick={()=>!approving&&nav&&nav('home')} disabled={approving}>Rechazar</Btn>
+          <Btn kind="accent" size="lg" style={{flex:2}} onClick={handleApprove} disabled={approving} iconRight={approving?null:<Ic name="arrow" size={16} color="#fff"/>}>
+            {approving?'Aprobando…':'Aprobar para iniciar'}
+          </Btn>
+        </Row>
+      </BottomBar>
+    </Screen>
+  );
+}
+function SealField({ label, value, last }) {
+  return (
+    <div style={{padding:'14px 0',borderBottom:last?'none':'0.5px solid rgba(0,0,0,.06)'}}>
+      <div style={{fontSize:10.5,color:UH.muted,textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600,marginBottom:6}}>{label}</div>
+      <div style={{fontSize:14,color:UH.ink2,lineHeight:1.5}}>{value}</div>
+    </div>
+  );
+}
+
+function ClientApproved({ nav }) {
+  return (
+    <Screen bg={UH.ink} style={{color:'#fff'}}>
+      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'40px 24px 20px',textAlign:'center'}}>
+        <div style={{position:'relative'}}>
+          <div style={{width:96,height:96,borderRadius:'50%',background:UH.accent,display:'grid',placeItems:'center',
+            animation:'pop .5s cubic-bezier(.18,.89,.32,1.28)',boxShadow:'0 0 0 0 '+UH.accent+',0 20px 40px -10px '+UH.accent}}>
+            <Ic name="check" size={42} color="#fff" strokeWidth={3}/>
+          </div>
+          {[0,1].map(i=>(
+            <div key={i} style={{position:'absolute',inset:0,borderRadius:'50%',border:'2px solid '+UH.accent,
+              animation:`ripple 1.6s ${i*0.4}s infinite ease-out`}}/>
+          ))}
+        </div>
+        <div style={{marginTop:28,fontSize:13,color:'rgba(255,255,255,.55)',fontWeight:600,letterSpacing:'0.08em',textTransform:'uppercase'}}>
+          Aprobado · Acuerdo firmado
+        </div>
+        <div style={{marginTop:14,fontSize:26,fontWeight:700,letterSpacing:'-0.02em',color:'#fff'}}>Precio bloqueado</div>
+        <div style={{marginTop:22,width:'100%',padding:'20px 22px',background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.1)',borderRadius:18,position:'relative',overflow:'hidden'}}>
+          <div style={{position:'absolute',top:12,right:12,display:'flex',alignItems:'center',gap:4,padding:'4px 8px',background:'rgba(255,255,255,.1)',borderRadius:999,fontSize:10,fontWeight:600,letterSpacing:'0.06em'}}>
+            <Ic name="lock" size={11} color={UH.accent}/> BLOQUEADO
+          </div>
+          <div style={{fontSize:11,color:'rgba(255,255,255,.55)',textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600}}>Tope máximo final</div>
+          <div style={{fontSize:30,fontWeight:700,fontFamily:'"JetBrains Mono","SF Mono",monospace',color:'#fff',marginTop:6,letterSpacing:'-0.01em'}}>
+            $ 180.000 <span style={{fontSize:14,color:'rgba(255,255,255,.5)',fontWeight:500}}>COP</span>
+          </div>
+          <div style={{fontSize:12,color:'rgba(255,255,255,.55)',marginTop:4}}>No subirá ni un peso más al cerrar el trabajo.</div>
+        </div>
+        <div style={{marginTop:14,width:'100%',padding:14,background:'rgba(120,200,150,.12)',border:'1px solid rgba(120,200,150,.3)',borderRadius:14,display:'flex',alignItems:'center',gap:12}}>
+          <Ic name="shieldCheck" size={20} color={UH.accent}/>
+          <div style={{textAlign:'left'}}>
+            <div style={{fontSize:13,fontWeight:600,color:'#fff'}}>Garantía de 30 días activada</div>
+            <div style={{fontSize:11.5,color:'rgba(255,255,255,.6)',marginTop:2}}>Hasta el 15 de junio</div>
+          </div>
+        </div>
+      </div>
+      <BottomBar>
+        <Btn kind="accent" full size="lg" onClick={()=>nav&&nav('working')} iconRight={<Ic name="arrow" size={16} color="#fff"/>}>
+          Ver trabajo en curso
+        </Btn>
+      </BottomBar>
+    </Screen>
+  );
+}
+
+function ClientWorking({ doneSteps=2 }) {
+  const steps=['Cerrar llave bajo el lavaplatos','Cambiar empaque y limpiar rosca','Probar 10 min sin escape'];
+  return (
+    <Screen>
+      <AppHeader title="Trabajo en curso" left={<Ic name="back" size={20}/>}/>
+      <ScrollArea>
+        <div style={{padding:'6px 16px 0'}}>
+          <div style={{background:UH.ink,color:'#fff',borderRadius:14,padding:14,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
+            <Row gap={10}>
+              <Ic name="lock" size={16} color={UH.accent}/>
+              <div>
+                <div style={{fontSize:11,color:'rgba(255,255,255,.55)',textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600}}>Precio bloqueado</div>
+                <div style={{fontSize:16,fontWeight:700,fontFamily:'"JetBrains Mono",monospace'}}>$ 180.000</div>
+              </div>
+            </Row>
+            <Pill tone="accent">GARANTÍA 30D</Pill>
+          </div>
+        </div>
+        <div style={{padding:'14px 16px 0'}}>
+          <Card style={{padding:14}}>
+            <Row gap={12}>
+              <Avatar name="CM" size={40} accent/>
+              <div style={{flex:1}}>
+                <div style={{fontSize:14.5,fontWeight:600}}>Carlos está trabajando</div>
+                <div style={{fontSize:12,color:UH.muted}}>Iniciado hace 6 min</div>
+              </div>
+              <Btn kind="ghost" size="sm" icon={<Ic name="chat" size={14}/>}/>
+            </Row>
+          </Card>
+        </div>
+        <div style={{padding:'14px 16px 0'}}>
+          <Card style={{padding:18}}>
+            <div style={{fontSize:12,fontWeight:600,color:UH.muted,marginBottom:12,letterSpacing:'0.04em',textTransform:'uppercase'}}>
+              {doneSteps}/{steps.length} pasos completados
+            </div>
+            <Stack gap={14}>
+              {steps.map((step,i)=>{
+                const done=doneSteps>i,active=doneSteps===i;
+                return (
+                  <Row key={i} gap={12} align="flex-start">
+                    <div style={{width:24,height:24,borderRadius:'50%',
+                      background:done?UH.accent:active?'rgba(0,0,0,.06)':'rgba(0,0,0,.04)',
+                      color:'#fff',display:'grid',placeItems:'center',flexShrink:0,
+                      animation:active?'pulseDot 1.6s ease-in-out infinite':'none'}}>
+                      {done?<Ic name="check" size={12} color="#fff" strokeWidth={3}/>:
+                        active?<div style={{width:8,height:8,borderRadius:'50%',background:UH.ink}}/>:null}
+                    </div>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:14.5,color:done?UH.muted:UH.ink,fontWeight:done?500:600,textDecoration:done?'line-through':'none'}}>{step}</div>
+                      <div style={{fontSize:12,color:UH.muted,marginTop:2}}>{done?'✓ completado':active?'en curso…':'pendiente'}</div>
+                    </div>
+                  </Row>
+                );
+              })}
+            </Stack>
+          </Card>
+        </div>
+        <div style={{height:30}}></div>
+      </ScrollArea>
+    </Screen>
+  );
+}
+
+function ClientClosed({ nav, rated=0 }) {
+  const [stars,setStars]=useState(rated);
+  return (
+    <Screen>
+      <AppHeader title="" left={<Ic name="close" size={20}/>}/>
+      <ScrollArea>
+        <div style={{padding:'8px 16px 0',textAlign:'center'}}>
+          <div style={{width:56,height:56,borderRadius:'50%',background:UH.accent,color:'#fff',display:'grid',placeItems:'center',margin:'0 auto'}}>
+            <Ic name="check" size={28} color="#fff" strokeWidth={3}/>
+          </div>
+          <div style={{fontSize:22,fontWeight:700,letterSpacing:'-0.02em',marginTop:14}}>Trabajo terminado</div>
+          <div style={{fontSize:13.5,color:UH.muted,marginTop:4}}>21 min · Sin sorpresas</div>
+        </div>
+        <div style={{padding:'20px 16px 0'}}>
+          <Card style={{padding:16}}>
+            <Row justify="space-between" align="flex-start">
+              <div>
+                <div style={{fontSize:11,color:UH.muted,textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600}}>Pagado</div>
+                <div style={{fontSize:26,fontWeight:700,fontFamily:'"JetBrains Mono",monospace',marginTop:2}}>$ 165.000</div>
+                <div style={{fontSize:12,color:UH.muted,marginTop:2}}>Dentro del rango aprobado</div>
+              </div>
+              <Pill tone="accent" icon={<Ic name="check" size={11} color={UH.accentInk}/>}>EN RANGO</Pill>
+            </Row>
+            <div style={{marginTop:14,paddingTop:14,borderTop:'0.5px solid rgba(0,0,0,.06)',display:'flex',justifyContent:'space-between',fontSize:13,color:UH.muted}}>
+              <span>•••• Visa 4421</span>
+              <span style={{color:UH.ink,fontWeight:600}}>Ver factura</span>
+            </div>
+          </Card>
+        </div>
+        <div style={{padding:'14px 16px 0'}}>
+          <div style={{background:'linear-gradient(135deg,'+UH.accentSoft+',white)',border:'1px solid #A8D9C4',borderRadius:16,padding:16}}>
+            <Row gap={12} align="center">
+              <div style={{width:44,height:44,borderRadius:12,background:UH.accent,color:'#fff',display:'grid',placeItems:'center'}}>
+                <Ic name="shieldCheck" size={22} color="#fff"/>
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:14.5,fontWeight:600,color:UH.accentInk}}>Garantía activa hasta 15 jun</div>
+                <div style={{fontSize:12,color:UH.accentInk,opacity:0.75,marginTop:2}}>Si la fuga reaparece, volvemos sin costo.</div>
+              </div>
+            </Row>
+          </div>
+        </div>
+        <div style={{padding:'20px 16px 0'}}>
+          <Card style={{padding:18,textAlign:'center'}}>
+            <Avatar name="CM" size={56} accent/>
+            <div style={{fontSize:15,fontWeight:600,marginTop:10}}>¿Cómo estuvo Carlos?</div>
+            <Row gap={6} justify="center" style={{marginTop:14}}>
+              {[1,2,3,4,5].map(i=>(
+                <span key={i} onClick={()=>setStars(i)} style={{cursor:'pointer'}}>
+                  <Ic name="star" size={28} color={i<=stars?UH.warn:'rgba(0,0,0,.12)'} strokeWidth={1.5}/>
+                </span>
+              ))}
+            </Row>
+          </Card>
+        </div>
+        <div style={{height:100}}></div>
+      </ScrollArea>
+      <BottomBar>
+        <Btn kind="primary" full size="lg" onClick={()=>nav&&nav('home')}>Listo</Btn>
+      </BottomBar>
+    </Screen>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// app.jsx — navigation shell
+// ─────────────────────────────────────────────────────────────
+
+const { useState: useAppState, useEffect: useAppEffect, useCallback: useAppCb } = React;
+
+function App() {
+  const [screen,setScreen]=useAppState('home');
+  const [waitingStage,setWaitingStage]=useAppState('arrived');
+  const [enrouteEta,setEnrouteEta]=useAppState(14);
+  const [enrouteProgress,setEnrouteProgress]=useAppState(0.05);
+  const [workingStep,setWorkingStep]=useAppState(0);
+
+  const go=useAppCb((s)=>{
+    setScreen(s);
+    if(s==='enroute'){setEnrouteEta(14);setEnrouteProgress(0.05);}
+    if(s==='waiting'){setWaitingStage('arrived');}
+    if(s==='working'){setWorkingStep(0);}
+    if(s==='home'){setEnrouteEta(14);setEnrouteProgress(0.05);setWaitingStage('arrived');setWorkingStep(0);}
+  },[]);
+
+  useAppEffect(()=>{
+    if(screen!=='searching')return;
+    const t=setTimeout(()=>go('enroute'),2600);
+    return()=>clearTimeout(t);
+  },[screen,go]);
+
+  useAppEffect(()=>{
+    if(screen!=='enroute')return;
+    let p=0.05,e=14;
+    const id=setInterval(()=>{
+      p=Math.min(1,p+0.08); e=Math.max(0,e-1);
+      setEnrouteProgress(p); setEnrouteEta(e);
+      if(p>=1){clearInterval(id);setTimeout(()=>go('waiting'),700);}
+    },700);
+    return()=>clearInterval(id);
+  },[screen,go]);
+
+  useAppEffect(()=>{
+    if(screen!=='waiting')return;
+    const stages=['arrived','diagnosing','drafting'];
+    let i=0; setWaitingStage(stages[0]);
+    const id=setInterval(()=>{
+      i++;
+      if(i<stages.length){setWaitingStage(stages[i]);}
+      else{clearInterval(id);setTimeout(()=>go('notif'),1200);}
+    },1800);
+    return()=>clearInterval(id);
+  },[screen,go]);
+
+  useAppEffect(()=>{
+    if(screen!=='working')return;
+    let n=0; setWorkingStep(0);
+    const id=setInterval(()=>{
+      n++;
+      if(n<=3){setWorkingStep(n);}
+      else{clearInterval(id);setTimeout(()=>go('closed'),800);}
+    },1700);
+    return()=>clearInterval(id);
+  },[screen,go]);
+
+  useAppEffect(()=>{
+    const h=(e)=>{ if(e.key==='r'||e.key==='R'||e.key==='Escape')go('home'); };
+    window.addEventListener('keydown',h);
+    return()=>window.removeEventListener('keydown',h);
+  },[go]);
+
+  let view;
+  switch(screen){
+    case 'home':      view=<ClientHome nav={go}/>;break;
+    case 'request':   view=<ClientRequest nav={go}/>;break;
+    case 'searching': view=<ClientSearching nav={go}/>;break;
+    case 'enroute':   view=<ClientEnRoute progress={enrouteProgress} eta={enrouteEta}/>;break;
+    case 'waiting':   view=<ClientWaitingDiag stage={waitingStage}/>;break;
+    case 'notif':     view=<ClientNotif nav={go}/>;break;
+    case 'acuerdo':   view=<ClientAcuerdo nav={go}/>;break;
+    case 'approved':  view=<ClientApproved nav={go}/>;break;
+    case 'working':   view=<ClientWorking doneSteps={workingStep}/>;break;
+    case 'closed':    view=<ClientClosed nav={go} rated={5}/>;break;
+    default:          view=<ClientHome nav={go}/>;
+  }
+
+  return (
+    <div style={{width:'100vw',height:'100vh',background:'#0B0B0C',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
+      <div key={screen} style={{animation:'phoneFade .35s cubic-bezier(.18,.89,.32,1.28)'}}>
+        <IOSDevice width={390} height={844}>{view}</IOSDevice>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
